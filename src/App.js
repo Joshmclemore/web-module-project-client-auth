@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Redirect, Link, useHistory } from 'reac
 import Login from './mocks/components/login';
 import FriendsList from './mocks/components/friendslist';
 import AddFriends from './mocks/components/addfriends';
+import Logout from './mocks/components/logout';
 import axios from 'axios';
 
 function App() {
@@ -14,6 +15,16 @@ function App() {
     age: "",
     email: "",
   });
+
+  const PrivateRoute = ( {component:Component, ...rest}) => {
+    return <Route {...rest} render={(props) => {
+        if (localStorage.getItem('token')) {
+            return(<Component {...props} friends={friends} handleSubmit={handleSubmit} handleChange={handleChange}/>)
+        } else {
+            return <Redirect to="/login"/>
+        }
+    }} />
+  }
 
   const { push } = useHistory();
 
@@ -42,7 +53,6 @@ function App() {
   const handleSubmit = () => {
     axios.post('http://localhost:9000/api/friends', form, {headers: {authorization: token}})
     .then(resp => {
-      debugger
       push('/friends')
     })
     .catch(err => {
@@ -55,10 +65,10 @@ function App() {
       <div className="App">
         <header id='header'>
           <h2>FRIENDS DATABASE</h2>
-          <Link className="links" to="login">LOGIN.</Link>
-          <Link className="links" to="friends">FRIENDLIST.</Link>
-          <Link className="links" to="friends/add">ADDFRIEND.</Link>
-          <Link className="links" to="logout">LOGOUT</Link>
+          <Link className="links" to="/login">LOGIN.</Link>
+          <Link className="links" to="/friends">FRIENDLIST.</Link>
+          <Link className="links" to="/friends/add">ADDFRIEND.</Link>
+          <Link className="links" to="/logout">LOGOUT</Link>
         </header>
         <Route exact path="/">
           <Login/>
@@ -66,12 +76,10 @@ function App() {
         <Route exact path="/login">
           <Redirect to="/"/>
         </Route>
-        <Route exact path="/friends">
-          <FriendsList friends={friends}/>
-        </Route>
-        <Route exact path="/friends/add">
-          <AddFriends form={form} handleSubmit={handleSubmit} handleChange={handleChange}/>
-        </Route>
+
+        <PrivateRoute exact path="/friends" component={FriendsList} friends={friends}/>
+        <PrivateRoute exact path="/friends/add" form={form} component={AddFriends} handleSubmit={handleSubmit} handleChange={handleChange}/>
+        <PrivateRoute exact path="/logout" component={Logout} />
       </div> 
     </Router>
 
